@@ -18,9 +18,10 @@ pushd $(dirname $0) > /dev/null
 
 # Get the current version
 git checkout main
-current_version=$(git describe --tags --abbrev=0)
-current_version_without_v=$(echo ${current_version} | cut -f2 -dv)
 
+git_tags=$(git tag)
+current_version=$(python3 ./update_semantic_version.py  --version "${git_tags}" --type MINOR --parse_latest_version true)
+current_version_without_v=$(echo ${current_version} | cut -f2 -dv)
 echo "Current release version is ${current_version_without_v}"
 
 # Validate that RELEASE_TYPE is what we expect and bump the version
@@ -52,7 +53,7 @@ git add ../README.md
 git commit -m "[v$new_version] $RELEASE_TITLE"
 
 # # push the commit and create a PR
-git push -u "https://${GITHUB_ACTOR}:${GH_TOKEN}@github.com/aws/aws-iot-device-sdk-js-v2.git" ${new_version_branch}
+git push -u "https://${GITHUB_ACTOR}:${GITHUB_TOKEN}@github.com/aws/aws-iot-device-sdk-js-v2.git" ${new_version_branch}
 gh pr create --title "AutoTag PR for v${new_version}" --body "AutoTag PR for v${new_version}" --head ${new_version_branch}
 
 # # Merge the PR
@@ -64,8 +65,8 @@ git fetch
 git checkout main
 git pull "https://${GITHUB_ACTOR}:${GITHUB_TOKEN}@github.com/aws/aws-iot-device-sdk-js-v2.git" main
 
-# Create new tag on latest commit with the release title
-git tag -f v${new_version} -m "${RELEASE_TITLE}"
+# Create new tag on latest commit (lightweight tag - we do NOT want an annotated tag)
+git tag -f v${new_version}
 # Push new tag to github
 git push "https://${GITHUB_ACTOR}:${GITHUB_TOKEN}@github.com/aws/aws-iot-device-sdk-js-v2.git" --tags
 
